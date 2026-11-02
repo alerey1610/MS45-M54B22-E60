@@ -34,3 +34,7 @@ The guide is being written topic by topic. Factory and modified images will be a
 [MS45 Flasher](https://github.com/terraphantm/MS45-Flasher)(for flashing and reading)
 
 [TunerPro](https://www.tunerpro.net)(for tuning your file)
+
+## Needed Hardware
+
+You will need an obd cable for connecting to the port. 
