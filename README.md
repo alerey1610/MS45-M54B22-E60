@@ -1,72 +1,85 @@
 # MS45 DIY Tuning: BMW E60 520i (M54B22, manual)
 
-A step-by-step guide to tuning the Siemens MS45.0 engine control unit yourself: read the ECU, edit the file in TunerPro, check it, flash it, and get back to stock. It includes a lean TunerPro definition (XDF) with every tuning option that has been worked out for this software, and a script that checks a file before you flash it.
+Complete documentation for tuning the Siemens MS45.0 engine control unit yourself: read the ECU, edit the file in TunerPro, check it, flash it, test it, and get back to stock. With TunerPro definitions (XDF) and a script that checks every file before you flash it.
 
-Most of what is online about the MS45 is scattered across forums and mixed up between software versions. Everything here was traced in the ECU code or checked against a real dump, and every parameter states how sure that is.
+Most of what is online about the MS45 is scattered across forums and mixed up between software versions. Everything here was traced in the ECU code or checked against a real dump.
 
-> [!WARNING]
-> **This only fits software `0044560BN00S0QA0G`** (dataset `CA456N0B`). Other software versions have their tables at other addresses. Run `ms45_check.py` on your dump first (step 3 of the guide). It tells you whether your ECU matches.
->
-> A modified ECU can damage the engine, the catalytic converter or the drivetrain, and it can affect your vehicle's registration and insurance. Use it on private ground only. Keep your original dump and know how to flash it back.
+## Read this first
 
-## What you can change
-
-| Goal | Parameters |
+| | |
 |---|---|
-| Higher or lower rev limit, per gear | `id_n_max_mt`, `id_n_max_h_mt` |
-| Harder limiter (hard cut feel) | `c_add_n_max_fcut` |
-| Separate limit when standing | column 0 of both rev limit tables |
-| Burbles when lifting off, in gear and standing | `ip_t_min_pu__n__tco`, `c_t_min_pu_vs` |
-| Burbles only with the sport button | `ip_t_min_pu_rng_l__n__tco` |
-| Louder burbles (later ignition on overrun) | `ip_iga_min_n_maf_pu` |
-| Higher cold idle | `ip_n_sp_is`, `ip_acin_n_sp_is` |
-| Top speed limiter | `c_vs_max` |
+| **Fits** | E60 520i, M54B22, **manual gearbox**, MS45.0 with software **`0044560BN00S0QA0G`**. Other versions or automatic: [does not fit](docs/troubleshooting.md#faq) |
+| **Power** | A naturally aspirated 2.2. Software gives roughly **10-15 hp** at most. [What to expect](docs/performance.md#what-to-expect) |
+| **Sound** | Burbles, pops and bangs, hard limiter: all possible. How loud depends mostly on the **exhaust**. [Sound and feel](docs/sound.md) |
+| **You need** | Windows laptop, K+DCAN cable, battery charger, a few free programs. [Step 1](docs/guide.md#step-1-download-and-install-the-programs) |
+| **Risk** | A failed flash can leave the ECU unusable. Too much ignition can damage the engine. Pops and bangs heat the catalyst. Keep your original file and know how to flash it back |
+| **Legal** | Changed ECU software and pops are not approved for public roads in most countries. [Legal](docs/troubleshooting.md#legal) |
+| **Time** | 2-3 hours for the first complete run |
 
-How it sounds and feels depends on your car: exhaust, mileage, condition. Test it yourself, one change at a time. Starting values are in the [recipes](docs/06-recipes.md). What else makes a difference, for example a sport exhaust, is in the [tips](docs/08-tips.md).
+## Where do you want to go?
 
-The standard XDF also shows the related tables you should not change (VANOS, lambda, pedal, torque, monitoring) as **[READ ONLY]**, so you can see the context. The check script refuses any file that changes them.
+| I want to ... | Go to |
+|---|---|
+| do it from scratch, step by step | **[Step-by-step guide](docs/guide.md)** |
+| more sound: burbles, pops, bangs, flames, hard limiter | **[Area 1: Sound and feel](docs/sound.md)** (3 levels) |
+| more power and response | **[Area 2: Performance](docs/performance.md)** (3 levels) |
+| fix an error or a fault code | [Problems, FAQ and limits](docs/troubleshooting.md) |
+| understand the words | [Basics and glossary](docs/basics.md) |
+| understand how the limiter and burbles work inside | [How it works](docs/how-it-works.md) |
+| look up one parameter | [Parameter reference](docs/parameters.md) |
 
-**Want to go further?** This is open source. The [expert XDFs](xdf/expert/) contain every known parameter (1707) with nothing locked, including ignition, VANOS, lambda, DISA and coolant for power tuning. Check those files with `ms45_check.py --expert`: the rules of this guide become warnings, but the checks that would brick or upset the ECU (monitoring checksum, signature, wrong software) still block. What is realistic for more power is in the [tips](docs/08-tips.md#more-power-what-is-realistic).
+## The steps at a glance
 
-## Guide
+1. [Download the programs](docs/guide.md#step-1-download-and-install-the-programs)
+2. [Connect the cable](docs/guide.md#step-2-connect-the-cable)
+3. [Read the fault memory](docs/guide.md#step-3-read-the-fault-memory-before-you-start) so you know what was there before
+4. [Read the ECU](docs/guide.md#step-4-read-the-ecu-download-your-bin) (download your bin)
+5. [Check your bin](docs/guide.md#step-5-check-your-bin)
+6. [Dry run](docs/guide.md#step-6-dry-run-flash-the-unchanged-file) with the unchanged file
+7. [Change the bin](docs/guide.md#step-7-change-the-bin-in-tunerpro)
+8. [Check the changed bin](docs/guide.md#step-8-check-the-changed-bin)
+9. [Flash](docs/guide.md#step-9-flash)
+10. [Test and read the fault memory](docs/guide.md#step-10-test-and-read-the-fault-memory)
 
-1. [How the MS45 stores its data](docs/01-basics.md)
-2. [Hardware and software you need](docs/02-setup.md)
-3. [Reading the ECU and making a backup](docs/03-read.md)
-4. [Editing in TunerPro](docs/04-edit.md)
-5. [Checking and flashing](docs/05-check-and-flash.md)
-6. [Recipes: what to enter for which goal](docs/06-recipes.md)
-7. [How the limiter and the overrun fuel cut work](docs/07-how-it-works.md)
-8. [Tips: exhaust, power, what works, what does not](docs/08-tips.md)
-9. [Parameter reference](docs/parameters.md)
+Is my read OK, and is it the right software?
 
-## Quick start
-
-```bash
-# 1. Is my dump the right software, and is it intact?
-python3 tools/ms45_check.py my_read.bin
-
-# 2. Edit a copy in TunerPro with xdf/MS45_E60_520i_TuneFile.xdf, save it
-
-# 3. Check the edited copy against the original. Exit code 0 = no errors
-python3 tools/ms45_check.py my_read.bin my_tune_v1.bin
+```bat
+py tools/ms45_check.py stock_tune.bin
 ```
 
-If you see an `ERROR`, do not flash.
+May I flash my changed file? (0 errors = yes)
+
+```bat
+py tools/ms45_check.py stock_tune.bin tune_v1.bin
+```
+
+## The two areas
+
+| Level | Area 1: Sound and feel | Area 2: Performance |
+|---|---|---|
+| **1 Mild** | Rev limit 6700, harder limiter, short burbles | Ignition +0.75-1.5° with knock log |
+| **2 Strong** | "d-d-d" hard cut, burbles up to 2 s, slightly later overrun ignition, sport exhaust | Ignition to just below the knock limit, full-load mixture with wideband |
+| **3 Extreme / Max** | No fuel cut on overrun, very late overrun ignition: pops and bangs, flames with an open exhaust | VANOS, DISA, coolant on the dyno, hardware |
 
 ## Repository contents
 
 | Path | What it is |
 |---|---|
-| [`xdf/MS45_E60_520i_TuneFile.xdf`](xdf/) | TunerPro definition for the tune file (118,784 bytes, "Read DME" without "Full Binary"). **Recommended.** |
-| [`xdf/MS45_E60_520i_FullFlash.xdf`](xdf/) | Same definition for a full 1 MB flash dump |
-| [`xdf/expert/`](xdf/expert/) | **Expert XDFs** (tune file and 1 MB): all 1707 known parameters, nothing locked. Check with `ms45_check.py --expert` |
-| [`tools/ms45_check.py`](tools/ms45_check.py) | Checks a file before flashing. Also identifies a single dump |
+| [`xdf/MS45_E60_520i_TuneFile.xdf`](xdf/) | TunerPro definition for the tune file (118,784 bytes, "Read DME" without "Full Binary"). **Start here** |
+| [`xdf/MS45_E60_520i_FullFlash.xdf`](xdf/) | Same for a full 1 MB flash dump |
+| [`xdf/expert/`](xdf/expert/) | Expert XDFs: all 1707 known parameters, nothing locked. Check with `--expert` |
+| [`tools/ms45_check.py`](tools/ms45_check.py) | Checks a file before flashing, or identifies a single read |
 | [`tools/ms45_tune.py`](tools/ms45_tune.py) | Cuts the tune file out of a 1 MB dump |
-| [`tools/ms45_diff.py`](tools/ms45_diff.py) | Shows which parameters differ between two files |
-| [`data/parameters.json`](data/parameters.json) | Address, scaling, stock value, safe range and notes for every known parameter. The scripts read it |
+| [`tools/ms45_diff.py`](tools/ms45_diff.py) | Lists which parameters differ between two files |
+| [`data/parameters.json`](data/parameters.json) | Address, scaling, stock value, safe range and notes for every known parameter |
 
-The scripts need Python 3 and nothing else. No ECU files are included in this repository.
+Python 3 is the only requirement for the scripts. No ECU files are included.
+
+Tried something? [Share your result](https://github.com/alerey1610/MS45-M54B22-E60/issues/new?template=test-report.md): which level, which exhaust, what you heard, which fault codes. That is how this guide gets better.
+
+## Kurzfassung auf Deutsch
+
+Vollständige Anleitung zum Selbst-Tunen der Siemens MS45.0 im E60 520i (M54B22, Handschalter, Software `0044560BN00S0QA0G`): auslesen, in TunerPro ändern, mit dem Skript prüfen, flashen, testen. Zwei Bereiche mit je drei Stufen: **Sound** (Begrenzer, Hardcut, Blubbern bis Knallen mit Flammen) und **Leistung** (Zündung, Gemisch, VANOS; realistisch 10-15 PS). Start: [Schritt-für-Schritt-Anleitung](docs/guide.md). Die Doku ist auf Englisch, Fragen und Issues gerne auch auf Deutsch.
 
 ## Credits
 

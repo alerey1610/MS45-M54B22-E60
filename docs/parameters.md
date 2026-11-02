@@ -1,4 +1,4 @@
-# 8. Parameter reference
+# Parameter reference
 
 All curated parameters in the XDF, generated from [`data/parameters.json`](../data/parameters.json). Addresses are 1 MB flash addresses; in the tune file subtract `0x40000`.
 
@@ -248,11 +248,13 @@ Stock: 992 to 1824 · allowed: 800 to 8160
 
 Below this rpm the ECU keeps injecting on overrun. Rows coolant temperature, columns gear.
 
+**Recipe:** Sound level 3 (pops and bangs): rows 60 and 90 C only, all columns 3008 (raw 94), 4000 (raw 125) or 8160 (raw 255 = never cut). Cold rows stay stock. Hint: continuous injection on overrun, hot catalyst, more fuel.
+
 Emulator: 1216 rpm standing warm, 1184 rpm in 3rd, 1056 rpm in 5th. 8160 means never cut, i.e. continuous injection on every overrun.
 
-**Together with:** Not suitable for short burbles. Leave stock for the time-based method.
+**Together with:** Time method (burble duration tables) and threshold method can be combined. With late overrun ignition (ip_iga_min_n_maf_pu) this gives pops and bangs.
 
-**Test:** Only compare. Do not change without a reason.
+**Test:** Warm, private ground, short series. Less engine braking below the threshold shows it works.
 
 ### Overrun cut-off threshold, A/C on
 
@@ -262,11 +264,11 @@ Stock: 1440 to 1760 · allowed: 800 to 8160
 
 Same as the A/C-off threshold, but used while the A/C compressor runs. Below this rpm fuel is never cut on overrun.
 
-**Recipe:** Experiment: rows 60 and 90 C, all columns 2400. Not higher. Leave the burble duration tables stock. Only works if the ECU actually sees 'compressor on'.
+**Recipe:** A/C switch: rows 60 and 90 C, all columns 2400 (only below 2400). Level 3 switchable via A/C: same values as the A/C-off level 3 recipe here, A/C-off table stock.
 
 Emulator: 1440 rpm when warm. The time path is the same with A/C on and off, only the threshold changes. A value of 8160 means fuel is never cut: continuous injection on every overrun with A/C on (a common mistake in public 'pops and bangs' files).
 
-**Together with:** Can be used as an A/C-button switch (experiment). Not for short burbles.
+**Together with:** Only active while the A/C compressor runs. Combine with late overrun ignition for bangs.
 
 **Test:** Compare engine braking with A/C on and off below the new threshold.
 
@@ -364,7 +366,7 @@ Stock: -24.38 to 16.5 · allowed: -35 to 30
 
 Lower limit of the ignition angle while the overrun path is active. This is the lever for burble volume without touching the driving maps.
 
-**Recipe:** Only the first two columns (76 and 98 mg/stroke), rows 2304-5792 rpm, at most 3 degrees less than stock. Example (col 76 / col 98): 2304 = -13.125 / -12.375, 2816 = -10.125 / -8.625, 3616 = -4.875 / -3.000, 4800 = 3.750 / 5.250, 5792 = 9.375 / 12.375.
+**Recipe:** Only the first two columns (76 and 98 mg/stroke), rows 2304-5792 rpm, at most 3 degrees less than stock. Example (col 76 / col 98): 2304 = -13.125 / -12.375, 2816 = -10.125 / -8.625, 3616 = -4.875 / -3.000, 4800 = 3.750 / 5.250, 5792 = 9.375 / 12.375. Level 3: further in steps of 1.5 degrees, more low-load columns, rows from about 1600 rpm. Check script accepts down to -35.
 
 Code 0x59884/0x59968: this map applies when the overrun cut-off condition is met. Not traced all the way to the ignition output whether ignition really goes down to this limit.
 

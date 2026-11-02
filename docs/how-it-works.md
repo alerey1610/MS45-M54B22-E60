@@ -1,6 +1,6 @@
-# 7. How the limiter and the overrun fuel cut work
+# How the limiter and the overrun fuel cut work
 
-Background for the [recipes](06-recipes.md). Addresses are 1 MB flash addresses or MPC code addresses.
+Background for [Sound and feel](sound.md). Addresses are 1 MB flash addresses or MPC code addresses.
 
 ## Rev limiter
 
@@ -41,7 +41,7 @@ The time unit is 0.01 s. Details that matter in practice:
 - The cut-off threshold is not fixed. Right after a cut-off it is 480 rpm higher for a while, then 96 rpm.
 - When the overrun ends, the counter resets. No lasting effect was found.
 
-**Why the common "pops and bangs" edit is wrong for this goal:** many public files set the cut-off threshold to 255 raw (8160 rpm). Then the rpm is never above the threshold, and fuel is never cut. In the emulator that meant more than 5 s of injection down to idle with the A/C on, instead of 1-2 s.
+**Two methods.** The time method (levels 1-2 in [Sound](sound.md)) delays the fuel cut by a set time, then the ECU cuts fuel normally. The threshold method ([level 3](sound.md#level-3-extreme-pops-bangs-and-flames)) raises the cut-off threshold, often to 255 raw (8160 rpm). Then the rpm is never above the threshold, and fuel is never cut: in the emulator more than 5 s of injection down to idle on one lift-off, instead of 1-2 s.
 
 **Sound.** The time until fuel cut is proven, the sound is not. The overrun ignition limit `ip_iga_min_n_maf_pu` applies during the waiting time. At light load it is around -10° at 2300 rpm but +7° at 4800 and +12° at 5800. So at high rpm it injects longest but with the earliest ignition: longer, but probably quieter.
 
@@ -49,6 +49,6 @@ The time unit is 0.01 s. Details that matter in practice:
 
 **Catalyst.** More fuel with late ignition heats the exhaust and the catalyst. 1-2 s per lift-off in normal driving is very different from continuous injection. Repeated revving while standing and long downhill runs are not. No temperature limit could be proven.
 
-## What is not covered on purpose
+## Pedal map and monitoring
 
-Emissions control, lambda and catalyst monitoring and OBD are not disabled or bypassed here. Torque tables, the pedal map and the monitoring are only shown as read-only. The pedal map `ip_fac_tq_req_driv` has a copy in the monitor (`ip_fac_tq_req_driv_mon`) inside the ROM test area. Changing one without the other would trigger a monitoring fault.
+The torque tables and the monitoring are read-only in the standard XDF. The pedal map `ip_fac_tq_req_driv` has a copy in the monitor (`ip_fac_tq_req_driv_mon`) inside the ROM test area. Changing one without the other triggers a monitoring fault. Catalyst, lambda and OBD diagnostics are not part of the parameter data.

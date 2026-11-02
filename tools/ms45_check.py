@@ -210,7 +210,7 @@ def main():
         if v["access"] == "read_only":
             r.policy(f"{name} is read only.")
         elif v["access"] == "caution":
-            r.warning(f"{name} is 'caution' (confidence {v['confidence']}, risk {v['risk']}).")
+            r.warning(f"{name} is 'caution' (risk {v['risk']}).")
         if v["rom_test"]:
             r.fail(f"{name} is inside the monitoring ROM test.")
         cells = phys_cells(b, v)
