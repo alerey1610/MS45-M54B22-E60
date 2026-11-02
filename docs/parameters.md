@@ -8,7 +8,7 @@ The JSON also lists 1650 further parameters from the A2L (categories starting wi
 
 ### Rev limit, manual (above 55 km/h)
 
-`id_n_max_mt` · `0x46036` · 1 × 9 · rpm · **free** · effect confirmed · risk medium
+`id_n_max_mt` · `0x46036` · 1 × 9 · rpm · **free** · risk medium
 
 Stock: 6520 · allowed: 3500 to 7000
 
@@ -24,13 +24,13 @@ Only active above 55 km/h plus 2 s. Below that, id_n_max_h_mt applies. Emulator:
 
 ### Rev limit, manual (standing and up to 55 km/h)
 
-`id_n_max_h_mt` · `0x46024` · 1 × 9 · rpm · **free** · effect confirmed · risk medium
+`id_n_max_h_mt` · `0x46024` · 1 × 9 · rpm · **free** · risk medium
 
 Stock: 6520 · allowed: 3500 to 7000
 
 Second limit curve. Applies when standing and up to 55 km/h plus 2 s, then id_n_max_mt takes over. Stock: same as the main curve.
 
-**Recipe:** Same values as id_n_max_mt. Standing limiter: column 0 = 4500 in both tables (effect partial: depends on how long the ECU sees 'no gear' when pulling away).
+**Recipe:** Same values as id_n_max_mt. Standing limiter: column 0 = 4500 in both tables (test whether the ECU sees 'no gear' long enough when pulling away).
 
 Emulator: changing only id_n_max_mt to 6700 still limits at 6520 below 55 km/h. Changing only this curve limits at 6520 again above 55 km/h.
 
@@ -40,7 +40,7 @@ Emulator: changing only id_n_max_mt to 6700 still limits at 6520 below 55 km/h. 
 
 ### Limiter I gain, manual
 
-`id_fac_n_max_i_mt__gear` · `0x45EC8` · 1 × 9 · Nm/rpm · **caution** · effect unclear · risk medium
+`id_fac_n_max_i_mt__gear` · `0x45EC8` · 1 × 9 · Nm/rpm · **caution** · risk medium
 
 Stock: 0.00647 to 0.03503 · allowed: 0 to 0.2
 
@@ -54,7 +54,7 @@ Same as the P gain.
 
 ### Limiter P gain, manual
 
-`id_fac_n_max_p_mt__gear` · `0x41A20` · 1 × 9 · Nm/rpm · **caution** · effect unclear · risk medium
+`id_fac_n_max_p_mt__gear` · `0x41A20` · 1 × 9 · Nm/rpm · **caution** · risk medium
 
 Stock: 0.1562 to 0.2812 · allowed: 0 to 2
 
@@ -68,7 +68,7 @@ No measurable effect on bouncing in the model. In the car probably responsible f
 
 ### Limiter hardness (hard cut threshold)
 
-`c_add_n_max_fcut` · `0x457D4` · constant · rpm · **caution** · effect partial · risk medium
+`c_add_n_max_fcut` · `0x457D4` · constant · rpm · **caution** · risk medium
 
 Stock: 50 · allowed: 0 to 100
 
@@ -84,7 +84,7 @@ Code 0x545A0: rpm > limit + value sets the request to 0 until rpm <= limit. This
 
 ### Limiter prediction time, manual
 
-`id_t_n_max_pred_mt__gear` · `0x41CAB` · 1 × 9 · s · **caution** · effect partial · risk low
+`id_t_n_max_pred_mt__gear` · `0x41CAB` · 1 × 9 · s · **caution** · risk low
 
 Stock: 0.03125 to 0.1875 · allowed: 0 to 0.3
 
@@ -100,7 +100,7 @@ Code 0x544DC: used for the predicted rpm. 0 = intervene only at the real limit. 
 
 ### Duration of the second limit curve
 
-`id_t_n_max_h_mt` · `0x41C99` · 1 × 9 · s · **read only** · effect unclear · risk low
+`id_t_n_max_h_mt` · `0x41C99` · 1 × 9 · s · **read only** · risk low
 
 Stock: 2
 
@@ -108,7 +108,7 @@ How long the second limit curve stays active. No effect as long as both curves a
 
 ### Limiter torque return rate
 
-`c_tqi_n_max_inc` · `0x45D76` · constant · Nm · **read only** · effect unclear · risk low
+`c_tqi_n_max_inc` · `0x45D76` · constant · Nm · **read only** · risk low
 
 Stock: 5
 
@@ -118,7 +118,7 @@ No effect on bouncing in the model, but a second review thinks it may affect the
 
 ### Limp-home rev limit
 
-`c_n_max_mtc_lih` · `0x45A92` · constant · rpm · **read only** · effect unclear · risk high
+`c_n_max_mtc_lih` · `0x45A92` · constant · rpm · **read only** · risk high
 
 Stock: 1312
 
@@ -126,7 +126,7 @@ Limit used when a throttle or safety fault is detected. Do not change.
 
 ### Lower floor of the rev limit
 
-`c_n_max_thd_min` · `0x45A94` · constant · rpm · **read only** · effect confirmed · risk low
+`c_n_max_thd_min` · `0x45A94` · constant · rpm · **read only** · risk low
 
 Stock: 1312
 
@@ -134,7 +134,7 @@ The effective limit never drops below this value (code 0xFFF91E2C).
 
 ### Oil temperature red zone (cluster)
 
-`ip_n_max_2__toil` · `0x46CCA` · 1 × 4 · rpm · **read only** · effect unclear · risk low
+`ip_n_max_2__toil` · `0x46CCA` · 1 × 4 · rpm · **read only** · risk low
 
 Stock: 5600 to 6600
 
@@ -142,7 +142,7 @@ According to the A2L, the 'red band' limit depending on oil temperature. Not rea
 
 ### Over-rev counter threshold
 
-`c_n_lim_min` · `0x45A7C` · constant · rpm · **read only** · effect partial · risk high
+`c_n_lim_min` · `0x45A7C` · constant · rpm · **read only** · risk high
 
 Stock: 7200
 
@@ -152,7 +152,7 @@ Do not change. Revving higher needs different valve springs/damper anyway.
 
 ### Ramp step from second to main limit
 
-`id_n_dec_n_max_h_mt` · `0x45FCA` · 1 × 9 · rpm · **read only** · effect unclear · risk low
+`id_n_dec_n_max_h_mt` · `0x45FCA` · 1 × 9 · rpm · **read only** · risk low
 
 Stock: 10
 
@@ -160,7 +160,7 @@ Ramp from the second limit curve down to the main curve. No effect as long as bo
 
 ### Speed threshold for the second limit curve
 
-`c_vs_thd_n_max_h_mt` · `0x418FF` · constant · km/h · **read only** · effect unclear · risk low
+`c_vs_thd_n_max_h_mt` · `0x418FF` · constant · km/h · **read only** · risk low
 
 Stock: 55
 
@@ -168,7 +168,7 @@ Vehicle speed where the switch between the two limit curves happens (stock 55 km
 
 ### Switch: cylinder cut in limiter
 
-`lc_inh_fcut_n_max` · `0x44A00` · constant · no unit · **read only** · effect unclear · risk high
+`lc_inh_fcut_n_max` · `0x44A00` · constant · no unit · **read only** · risk high
 
 Stock: 0
 
@@ -176,7 +176,7 @@ Logic switch in the cylinder cut path. Stock 0. Do not change.
 
 ### Switch: total fuel cut in limiter
 
-`lc_ena_fcut_tot_n_max` · `0x449E8` · constant · no unit · **read only** · effect unclear · risk high
+`lc_ena_fcut_tot_n_max` · `0x449E8` · constant · no unit · **read only** · risk high
 
 Stock: 0
 
@@ -184,7 +184,7 @@ Logic switch in the cylinder cut path. Stock 0. Effect not fully traced, do not 
 
 ### Time window after speed threshold
 
-`c_t_max_n_max_h_mt` · `0x4177C` · constant · s · **read only** · effect unclear · risk low
+`c_t_max_n_max_h_mt` · `0x4177C` · constant · s · **read only** · risk low
 
 Stock: 2
 
@@ -194,7 +194,7 @@ Time window for the second (h_mt) limit curve.
 
 ### Burble duration in gear, sport mode
 
-`ip_t_min_pu_rng_l__n__tco` · `0x50AB0` · 8 × 6 · s · **caution** · effect partial · risk medium
+`ip_t_min_pu_rng_l__n__tco` · `0x50AB0` · 8 × 6 · s · **caution** · risk medium
 
 Stock: 0.2 to 0.41 · allowed: 0 to 2.5
 
@@ -210,7 +210,7 @@ Emulator: with the flag set, this map is used instead of the normal one. That ma
 
 ### Burble duration, in gear
 
-`ip_t_min_pu__n__tco` · `0x50A50` · 8 × 6 · s · **caution** · effect partial · risk medium
+`ip_t_min_pu__n__tco` · `0x50A50` · 8 × 6 · s · **caution** · risk medium
 
 Stock: 0.22 to 0.47 · allowed: 0 to 2.5
 
@@ -226,7 +226,7 @@ Emulator: fuel cut after this time if rpm stays above the threshold. The map is 
 
 ### Burble duration, standing
 
-`c_t_min_pu_vs` · `0x45C48` · constant · s · **caution** · effect partial · risk medium
+`c_t_min_pu_vs` · `0x45C48` · constant · s · **caution** · risk medium
 
 Stock: 0.18 · allowed: 0 to 1.5
 
@@ -242,7 +242,7 @@ Emulator: fuel cut after this time. With a short blip the revs drop below the cu
 
 ### Overrun cut-off threshold, A/C off
 
-`ip_n_min_puc__tco__gr_mt` · `0x4B2FE` · 6 × 13 · rpm · **caution** · effect confirmed · risk high
+`ip_n_min_puc__tco__gr_mt` · `0x4B2FE` · 6 × 13 · rpm · **caution** · risk high
 
 Stock: 992 to 1824 · allowed: 800 to 8160
 
@@ -256,7 +256,7 @@ Emulator: 1216 rpm standing warm, 1184 rpm in 3rd, 1056 rpm in 5th. 8160 means n
 
 ### Overrun cut-off threshold, A/C on
 
-`ip_n_accout_min_puc__tco__gr_mt` · `0x4B262` · 6 × 13 · rpm · **caution** · effect confirmed · risk high
+`ip_n_accout_min_puc__tco__gr_mt` · `0x4B262` · 6 × 13 · rpm · **caution** · risk high
 
 Stock: 1440 to 1760 · allowed: 800 to 8160
 
@@ -272,7 +272,7 @@ Emulator: 1440 rpm when warm. The time path is the same with A/C on and off, onl
 
 ### Overrun delay with clutch pressed
 
-`c_t_min_pu` · `0x45C42` · constant · s · **caution** · effect confirmed · risk medium
+`c_t_min_pu` · `0x45C42` · constant · s · **caution** · risk medium
 
 Stock: 0.1 · allowed: 0 to 0.5
 
@@ -286,7 +286,7 @@ Emulator: 0.11 s. More time means the revs hang longer when shifting. Leave stoc
 
 ### Max wait for torque reduction in gear
 
-`c_t_max_pu` · `0x45C28` · constant · s · **read only** · effect confirmed · risk medium
+`c_t_max_pu` · `0x45C28` · constant · s · **read only** · risk medium
 
 Stock: 1.2
 
@@ -296,7 +296,7 @@ Emulator: without reduced torque the ECU cuts after 1.21 s, regardless of the ma
 
 ### Overrun cut-off hysteresis
 
-`id_n_hys_max_puc__gr_mt` · `0x41B77` · 1 × 13 · rpm · **read only** · effect unclear · risk low
+`id_n_hys_max_puc__gr_mt` · `0x41B77` · 1 × 13 · rpm · **read only** · risk low
 
 Stock: 480
 
@@ -304,7 +304,7 @@ Extra margin above the cut-off threshold. The active value changes: 480 right af
 
 ### Overrun delay with clutch, sport mode
 
-`c_t_min_pu_rng_l` · `0x45C46` · constant · s · **read only** · effect unclear · risk low
+`c_t_min_pu_rng_l` · `0x45C46` · constant · s · **read only** · risk low
 
 Stock: 1.2
 
@@ -312,7 +312,7 @@ Like c_t_min_pu, but when the flag LV_RNG_L is set, which follows the sport mode
 
 ### Speed for 'car is moving'
 
-`c_vs_min_run` · `0x418F1` · constant · km/h · **read only** · effect confirmed · risk low
+`c_vs_min_run` · `0x418F1` · constant · km/h · **read only** · risk low
 
 Stock: 6
 
@@ -320,7 +320,7 @@ Below this speed the standing value c_t_min_pu_vs applies (stock 6 km/h).
 
 ### Wait after drag torque control
 
-`c_t_min_pu_msr` · `0x45C44` · constant · s · **read only** · effect unclear · risk low
+`c_t_min_pu_msr` · `0x45C44` · constant · s · **read only** · risk low
 
 Stock: 1
 
@@ -330,7 +330,7 @@ Minimum time after an engine drag torque control intervention (stock 1.00 s).
 
 ### Base ignition RON 91
 
-`ip_iga_bas_ron_91__n__maf` · `0x4AD24` · 20 × 16 · °CRK · **caution** · effect partial · risk high
+`ip_iga_bas_ron_91__n__maf` · `0x4AD24` · 20 × 16 · °CRK · **caution** · risk high
 
 Stock: -16.5 to 42.38 · allowed: -35 to 60
 
@@ -344,7 +344,7 @@ Do not advance.
 
 ### Base ignition RON 98
 
-`ip_iga_bas_ron_98__n__maf` · `0x4AE64` · 20 × 16 · °CRK · **caution** · effect partial · risk high
+`ip_iga_bas_ron_98__n__maf` · `0x4AE64` · 20 × 16 · °CRK · **caution** · risk high
 
 Stock: -13.5 to 42.38 · allowed: -35 to 60
 
@@ -358,7 +358,7 @@ Code 0x59200 and RomRaider 4560BN00 confirm the address. More advance only with 
 
 ### Latest ignition on overrun (burble volume)
 
-`ip_iga_min_n_maf_pu` · `0x4320E` · 8 × 6 · °CRK · **caution** · effect partial · risk high
+`ip_iga_min_n_maf_pu` · `0x4320E` · 8 × 6 · °CRK · **caution** · risk high
 
 Stock: -24.38 to 16.5 · allowed: -35 to 30
 
@@ -374,7 +374,7 @@ Code 0x59884/0x59968: this map applies when the overrun cut-off condition is met
 
 ### Base ignition without VANOS
 
-`ip_iga_bas__n__maf` · `0x4A964` · 20 × 16 · °CRK · **read only** · effect unclear · risk medium
+`ip_iga_bas__n__maf` · `0x4A964` · 20 × 16 · °CRK · **read only** · risk medium
 
 Stock: -9 to 41.62
 
@@ -382,7 +382,7 @@ Used on a VANOS fault. Stays conservative.
 
 ### Ignition offset, max valve overlap
 
-`ip_iga_bas_add_max_ivvt__n__maf` · `0x4AAA4` · 20 × 16 · °CRK · **read only** · effect unclear · risk medium
+`ip_iga_bas_add_max_ivvt__n__maf` · `0x4AAA4` · 20 × 16 · °CRK · **read only** · risk medium
 
 Stock: 0
 
@@ -390,7 +390,7 @@ Offset depending on valve overlap.
 
 ### Ignition offset, min valve overlap
 
-`ip_iga_bas_add_min_ivvt__n__maf` · `0x4ABE4` · 20 × 16 · °CRK · **read only** · effect unclear · risk medium
+`ip_iga_bas_add_min_ivvt__n__maf` · `0x4ABE4` · 20 × 16 · °CRK · **read only** · risk medium
 
 Stock: 0
 
@@ -398,7 +398,7 @@ Offset depending on valve overlap.
 
 ### Latest ignition, normal
 
-`ip_iga_min_n_maf` · `0x431AE` · 8 × 6 · °CRK · **read only** · effect unclear · risk high
+`ip_iga_min_n_maf` · `0x431AE` · 8 × 6 · °CRK · **read only** · risk high
 
 Stock: -22.5 to 21
 
@@ -408,7 +408,7 @@ Lower limit outside the overrun path. Do not change.
 
 ### VANOS exhaust setpoint 1
 
-`ip_cam_sp_1_ex_pl__n__maf_ivvt` · `0x4A454` · 16 × 12 · °CRK · **read only** · effect unclear · risk high
+`ip_cam_sp_1_ex_pl__n__maf_ivvt` · `0x4A454` · 16 × 12 · °CRK · **read only** · risk high
 
 Stock: -104.9 to -92.12
 
@@ -416,7 +416,7 @@ Exhaust cam target in part load. Only change with a healthy VANOS (no P0011/P001
 
 ### VANOS exhaust setpoint 2
 
-`ip_cam_sp_2_ex_pl__n__maf_ivvt` · `0x4A5D4` · 16 × 12 · °CRK · **read only** · effect unclear · risk high
+`ip_cam_sp_2_ex_pl__n__maf_ivvt` · `0x4A5D4` · 16 × 12 · °CRK · **read only** · risk high
 
 Stock: -104.9 to -81.62
 
@@ -424,7 +424,7 @@ Second exhaust table. Switching condition not known.
 
 ### VANOS intake setpoint 1
 
-`ip_cam_sp_1_in_pl__n__maf_ivvt` · `0x4A514` · 16 × 12 · °CRK · **read only** · effect unclear · risk high
+`ip_cam_sp_1_in_pl__n__maf_ivvt` · `0x4A514` · 16 × 12 · °CRK · **read only** · risk high
 
 Stock: 92.25 to 119.2
 
@@ -434,7 +434,7 @@ Intake cam target in part load. Only change with a healthy VANOS (no P0011/P0014
 
 ### Idle speed, A/C off
 
-`ip_n_sp_is` · `0x46CE6` · 1 × 8 · rpm · **caution** · effect partial · risk low
+`ip_n_sp_is` · `0x46CE6` · 1 × 8 · rpm · **caution** · risk low
 
 Stock: 660 to 1120 · allowed: 600 to 1400
 
@@ -450,7 +450,7 @@ Table selection confirmed in code. During catalyst heating ip_n_sp_ch can limit 
 
 ### Idle speed, A/C on
 
-`ip_acin_n_sp_is` · `0x461EE` · 1 × 8 · rpm · **caution** · effect partial · risk low
+`ip_acin_n_sp_is` · `0x461EE` · 1 × 8 · rpm · **caution** · risk low
 
 Stock: 660 to 1120 · allowed: 600 to 1400
 
@@ -466,7 +466,7 @@ See ip_n_sp_is.
 
 ### Idle target in part load
 
-`ip_n_sp_is_pl` · `0x4F280` · 6 × 6 · rpm · **read only** · effect unclear · risk medium
+`ip_n_sp_is_pl` · `0x4F280` · 6 × 6 · rpm · **read only** · risk medium
 
 Stock: 690 to 880
 
@@ -474,7 +474,7 @@ Target in part load. Wiki: raise together with the idle target.
 
 ### Max idle during catalyst heating
 
-`ip_n_sp_ch` · `0x4F200` · 8 × 8 · rpm · **read only** · effect unclear · risk high
+`ip_n_sp_ch` · `0x4F200` · 8 × 8 · rpm · **read only** · risk high
 
 Stock: 660 to 1100
 
@@ -482,7 +482,7 @@ Limits idle in the first seconds after start. Part of catalyst heating, do not c
 
 ### Pull-away assist, manual
 
-`ip_n_sp_is_cs` · `0x46CF6` · 1 × 8 · rpm · **read only** · effect unclear · risk medium
+`ip_n_sp_is_cs` · `0x46CF6` · 1 × 8 · rpm · **read only** · risk medium
 
 Stock: 820 to 1120
 
@@ -492,7 +492,7 @@ According to the MS4X wiki the rpm target for the pull-away assist. 'cs' is the 
 
 ### Lambda full load
 
-`ip_lamb_fl__n` · `0x46ADC` · 1 × 12 · no unit · **caution** · effect partial · risk high
+`ip_lamb_fl__n` · `0x46ADC` · 1 × 12 · no unit · **caution** · risk high
 
 Stock: 0.8916 to 0.96 · allowed: 0.82 to 1.0
 
@@ -506,7 +506,7 @@ Address confirmed in code. Cannot be verified without a wideband sensor; the sto
 
 ### Injector dead time
 
-`ip_ti_add_dly` · `0x51330` · 8 × 6 · ms · **read only** · effect unclear · risk high
+`ip_ti_add_dly` · `0x51330` · 8 × 6 · ms · **read only** · risk high
 
 Stock: 0.04 to 3.628
 
@@ -514,7 +514,7 @@ Only relevant with different injectors.
 
 ### Lambda part load 1
 
-`ip_lamb_bas_1` · `0x4E438` · 8 × 8 · no unit · **read only** · effect unclear · risk high
+`ip_lamb_bas_1` · `0x4E438` · 8 × 8 · no unit · **read only** · risk high
 
 Stock: 1
 
@@ -522,7 +522,7 @@ Base lambda in part load. Part of the emissions strategy, do not change.
 
 ### Lambda part load 2
 
-`ip_lamb_bas_2` · `0x4E4B8` · 8 × 8 · no unit · **read only** · effect unclear · risk high
+`ip_lamb_bas_2` · `0x4E4B8` · 8 × 8 · no unit · **read only** · risk high
 
 Stock: 1
 
@@ -532,7 +532,7 @@ Base lambda in part load. Part of the emissions strategy, do not change.
 
 ### Max torque at the clutch
 
-`id_tq_p_max_mt` · `0x46144` · 1 × 13 · Nm · **read only** · effect unclear · risk high
+`id_tq_p_max_mt` · `0x46144` · 1 × 13 · Nm · **read only** · risk high
 
 Stock: 999
 
@@ -540,7 +540,7 @@ Torque limit per gear. Do not touch.
 
 ### Pedal map (driver demand)
 
-`ip_fac_tq_req_driv` · `0x4DC28` · 12 × 12 · no unit · **read only** · effect partial · risk high
+`ip_fac_tq_req_driv` · `0x4DC28` · 12 × 12 · no unit · **read only** · risk high
 
 Stock: 0 to 1
 
@@ -550,7 +550,7 @@ Found, but not released: the _mon partner sits in the ROM test area and cannot s
 
 ### Pedal map, sport mode
 
-`ip_fac_tq_req_driv_rng_l` · `0x4DD48` · 12 × 12 · no unit · **read only** · effect unclear · risk high
+`ip_fac_tq_req_driv_rng_l` · `0x4DD48` · 12 × 12 · no unit · **read only** · risk high
 
 Stock: 0 to 1
 
@@ -558,7 +558,7 @@ Second pedal map for the flag LV_RNG_L. Do not change.
 
 ### Pedal value for full-load detection
 
-`ip_pv_max_fl__n` · `0x439EB` · 1 × 16 · % · **read only** · effect partial · risk medium
+`ip_pv_max_fl__n` · `0x439EB` · 1 × 16 · % · **read only** · risk medium
 
 Stock: 66.02
 
@@ -566,7 +566,7 @@ Above this pedal value (stock 66 %) full load enrichment applies. Not a pedal cu
 
 ### Reference torque
 
-`ip_tqi_ref__n__maf` · `0x52378` · 16 × 12 · Nm · **read only** · effect unclear · risk high
+`ip_tqi_ref__n__maf` · `0x52378` · 16 × 12 · Nm · **read only** · risk high
 
 Stock: 10.47 to 330.4
 
@@ -574,7 +574,7 @@ Torque path. Do not touch.
 
 ### Target air mass from torque
 
-`ip_maf_sp` · `0x4ED20` · 16 × 12 · mg/stroke · **read only** · effect unclear · risk high
+`ip_maf_sp` · `0x4ED20` · 16 × 12 · mg/stroke · **read only** · risk high
 
 Stock: 47.92 to 563.4
 
@@ -584,7 +584,7 @@ Torque path. Do not touch.
 
 ### DISA load threshold
 
-`c_fac_maf_max_vim` · `0x458E8` · constant · no unit · **read only** · effect unclear · risk medium
+`c_fac_maf_max_vim` · `0x458E8` · constant · no unit · **read only** · risk medium
 
 Stock: 0.7
 
@@ -592,7 +592,7 @@ Load threshold of the intake manifold flap.
 
 ### DISA lower rpm threshold
 
-`c_n_vim_l` · `0x45AC6` · constant · rpm · **read only** · effect unclear · risk medium
+`c_n_vim_l` · `0x45AC6` · constant · rpm · **read only** · risk medium
 
 Stock: 2200
 
@@ -600,7 +600,7 @@ Switching zone of the intake manifold flap. Wiki: must match the intake model.
 
 ### DISA upper rpm threshold
 
-`c_n_vim_h` · `0x45AC2` · constant · rpm · **read only** · effect unclear · risk medium
+`c_n_vim_h` · `0x45AC2` · constant · rpm · **read only** · risk medium
 
 Stock: 4100
 
@@ -610,7 +610,7 @@ Switching zone of the intake manifold flap. Wiki: must match the intake model.
 
 ### Electric fan stage
 
-`ip_n_ecf` · `0x438ED` · 1 × 6 · no unit · **read only** · effect unclear · risk medium
+`ip_n_ecf` · `0x438ED` · 1 × 6 · no unit · **read only** · risk medium
 
 Stock: 0 to 15
 
@@ -618,7 +618,7 @@ Stage of the electric fan. View only.
 
 ### Target coolant temperature, A/C off
 
-`id_tco_sp_ect` · `0x4A364` · 12 × 6 · °C · **read only** · effect unclear · risk medium
+`id_tco_sp_ect` · `0x4A364` · 12 × 6 · °C · **read only** · risk medium
 
 Stock: 87 to 102
 
@@ -626,7 +626,7 @@ Map thermostat target. View only.
 
 ### Target coolant temperature, A/C on
 
-`id_tco_sp_ect_acin` · `0x4A3AC` · 12 × 6 · °C · **read only** · effect unclear · risk medium
+`id_tco_sp_ect_acin` · `0x4A3AC` · 12 × 6 · °C · **read only** · risk medium
 
 Stock: 80.25 to 102
 
@@ -636,7 +636,7 @@ Map thermostat target with A/C on. View only.
 
 ### Top speed limiter
 
-`c_vs_max` · `0x418D4` · constant · km/h · **caution** · effect partial · risk high
+`c_vs_max` · `0x418D4` · constant · km/h · **caution** · risk high
 
 Stock: 235 · allowed: 100 to 255
 
@@ -654,7 +654,7 @@ Code 0xFFF91CB8 and RomRaider confirm the address. Little practical use, a 520i 
 
 ### Warm-up fuel factor
 
-`ip_fac_ti_tco_wup` · `0x42A08` · 1 × 8 · no unit · **caution** · effect partial · risk medium
+`ip_fac_ti_tco_wup` · `0x42A08` · 1 × 8 · no unit · **caution** · risk medium
 
 Stock: 1 · allowed: 0 to 2
 
@@ -668,7 +668,7 @@ Address confirmed in code, effect not emulated.
 
 ### Cranking fuel
 
-`ip_mff_cst` · `0x46BE4` · 3 × 8 · mg/stroke · **read only** · effect unclear · risk medium
+`ip_mff_cst` · `0x46BE4` · 3 × 8 · mg/stroke · **read only** · risk medium
 
 Stock: 19.2 to 310.3
 
@@ -678,7 +678,7 @@ Base value of the cranking fuel mass. Only relevant for E85 or starting problems
 
 ### Monitor: max idle speed
 
-`ip_n_sp_is_mon_max_mon` · `0x404D0` · 1 × 5 · rpm · **read only** · effect unclear · risk high
+`ip_n_sp_is_mon_max_mon` · `0x404D0` · 1 × 5 · rpm · **read only** · risk high
 
 Stock: 1024 to 1408
 
@@ -686,7 +686,7 @@ Upper limit of the torque monitor for the idle target. Inside the ROM test area,
 
 ### Monitor: reference torque
 
-`ip_tqi_ref_mon` · `0x40539` · 6 × 8 · Nm · **read only** · effect unclear · risk high
+`ip_tqi_ref_mon` · `0x40539` · 6 × 8 · Nm · **read only** · risk high
 
 Stock: 18 to 328
 
@@ -694,7 +694,7 @@ Inside the ROM test area of the monitor. Any change breaks the checksum test.
 
 ### ROM test switch
 
-`val_mo3_swi_cal_cks` · `0x45788` · constant · no unit · **read only** · effect confirmed · risk high
+`val_mo3_swi_cal_cks` · `0x45788` · constant · no unit · **read only** · risk high
 
 Stock: 0
 
@@ -702,7 +702,7 @@ Turns off the reaction to the checksum test. Do not change, it is a safety funct
 
 ### ROM test target sum (high)
 
-`val_mo3_cal_cks_high` · `0x457AC` · constant · no unit · **read only** · effect confirmed · risk high
+`val_mo3_cal_cks_high` · `0x457AC` · constant · no unit · **read only** · risk high
 
 Stock: 1.909e+07
 
@@ -710,7 +710,7 @@ Target value of the checksum over 0x40240-0x407C7. Recalculated, matches the fil
 
 ### ROM test target sum (low)
 
-`val_mo3_cal_cks_low` · `0x457B0` · constant · no unit · **read only** · effect confirmed · risk high
+`val_mo3_cal_cks_low` · `0x457B0` · constant · no unit · **read only** · risk high
 
 Stock: 4.247e+09
 

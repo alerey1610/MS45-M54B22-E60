@@ -4,11 +4,11 @@ All values are for a warm engine and private ground. Check every file with `ms45
 
 **Good order:** first file with the rev limit and the hard cut only. Second file adds burbles. Louder burbles last, and only if needed. That way you always know which change caused a fault.
 
-"Confirmed" means the ECU's original code was run in an emulator with this change. "Partial" means the code path is proven, but sound and feel only show in the car.
+The values are starting points. How it sounds and feels depends on your car, so test every change yourself. The time tables below come from running the original ECU code in an emulator; they show what the ECU does, not how loud it gets.
 
 ---
 
-## Rev limit 6700 rpm (confirmed)
+## Rev limit 6700 rpm
 
 | Table | Cells | Stock | New |
 |---|---|---|---|
@@ -21,7 +21,7 @@ All values are for a warm engine and private ground. Check every file with `ms45
 - The M54B22 makes little extra power up there. This mainly gives you more room before shifting.
 - Test: standing, warm, briefly to the limit. It should cut at 6700-6750.
 
-## Harder limiter, "hard cut" feel (partial)
+## Harder limiter, "hard cut" feel
 
 The stock limiter softly takes away torque and bounces about 1-2 times per second ("hummm"). A smaller threshold makes it bounce faster and harder ("d-d-d").
 
@@ -44,13 +44,13 @@ Bounce rate in the emulator model:
 - A hard limiter is a load spike on clutch, drivetrain and differential. Use it standing, only briefly in gear.
 - Fault 28B1 or 28B2: back to 50.
 
-## Separate limit when standing (partial)
+## Separate limit when standing
 
 In **both** rev limit tables, set **column 0 only** (= no gear detected) to **4500**. The engine then revs only to 4500 when standing in neutral.
 
 This is not launch control. Whether the ECU sees "no gear" long enough while pulling away only shows in a log.
 
-## Burbles when lifting off (partial)
+## Burbles when lifting off
 
 After you lift off, the ECU keeps injecting for a short time before it cuts fuel. Longer time = more burbling.
 
@@ -87,13 +87,13 @@ What happens, calculated with the original ECU code:
 - Above 1.2 s the torque monitor hold time runs out. What happens after that is not fully known. That is why step 1 stays below 1.2 s.
 - **Do not** raise the *overrun cut-off thresholds* for burbles. A high value there (often 255 raw / 8160 rpm in public files) means continuous injection on the whole overrun, not short burbles.
 
-## Burbles only with the sport button (partial)
+## Burbles only with the sport button
 
 If your car has a sport button: put the step 1 values into *Burble duration in gear, sport mode* `ip_t_min_pu_rng_l__n__tco` instead, and leave the normal table stock. In gear, it then only burbles with sport mode on. Standing always uses the standing value.
 
 Sport mode also changes the pedal feel, and in stock form the revs already hang about 1.2 s when shifting in sport mode.
 
-## Louder burbles (partial, last step)
+## Louder burbles (last step)
 
 Only if the burbles are too quiet. *Latest ignition on overrun* `ip_iga_min_n_maf_pu`: a smaller number means later ignition, which is louder but makes the catalyst and the manifold hotter.
 
@@ -109,7 +109,7 @@ Only the first two columns (76 and 98 mg/stroke), only rows 2304-5792 rpm, at mo
 
 Test only briefly, never many times in a row, no long downhill runs. In stock form the ignition is later at low rpm than at high rpm, so burbles at high rpm are longer but quieter.
 
-## Experiment: burbles via the A/C (partial)
+## Experiment: burbles via the A/C
 
 Without a sport button there is no real switch for the burble time. The A/C switches something else: the rpm below which the ECU never cuts fuel on overrun.
 
@@ -120,7 +120,7 @@ Without a sport button there is no real switch for the burble time. The A/C swit
 
 This is continuous injection below 2400, not a short burble. It only works if the ECU actually sees "compressor on". Test: with A/C on, less engine braking below 2400 rpm means it works. Not higher than 2400.
 
-## Higher cold idle (partial)
+## Higher cold idle
 
 *Idle speed, A/C off* `ip_n_sp_is` and *Idle speed, A/C on* `ip_acin_n_sp_is`, **same values in both**:
 
@@ -132,6 +132,6 @@ This is continuous injection below 2400, not a short burble. It only works if th
 
 The idle must stay below the monitor limit, which cannot be changed. `ms45_check.py` checks this. During catalyst heating right after a start, another table limits the idle.
 
-## Top speed limiter (partial)
+## Top speed limiter
 
 *Top speed limiter* `c_vs_max`, stock 235 km/h, maximum 255 (= off). Only up to your tyre speed rating. A 520i hardly reaches 235 anyway.

@@ -11,20 +11,22 @@ Most of what is online about the MS45 is scattered across forums and mixed up be
 
 ## What you can change
 
-| Goal | Parameters | Effect |
-|---|---|---|
-| Higher or lower rev limit, per gear | `id_n_max_mt`, `id_n_max_h_mt` | confirmed |
-| Harder limiter (hard cut feel) | `c_add_n_max_fcut` | partial |
-| Separate limit when standing | column 0 of both rev limit tables | partial |
-| Burbles when lifting off, in gear and standing | `ip_t_min_pu__n__tco`, `c_t_min_pu_vs` | partial |
-| Burbles only with the sport button | `ip_t_min_pu_rng_l__n__tco` | partial |
-| Louder burbles (later ignition on overrun) | `ip_iga_min_n_maf_pu` | partial |
-| Higher cold idle | `ip_n_sp_is`, `ip_acin_n_sp_is` | partial |
-| Top speed limiter | `c_vs_max` | partial |
+| Goal | Parameters |
+|---|---|
+| Higher or lower rev limit, per gear | `id_n_max_mt`, `id_n_max_h_mt` |
+| Harder limiter (hard cut feel) | `c_add_n_max_fcut` |
+| Separate limit when standing | column 0 of both rev limit tables |
+| Burbles when lifting off, in gear and standing | `ip_t_min_pu__n__tco`, `c_t_min_pu_vs` |
+| Burbles only with the sport button | `ip_t_min_pu_rng_l__n__tco` |
+| Louder burbles (later ignition on overrun) | `ip_iga_min_n_maf_pu` |
+| Higher cold idle | `ip_n_sp_is`, `ip_acin_n_sp_is` |
+| Top speed limiter | `c_vs_max` |
 
-"Confirmed" means the ECU's own code was run in an emulator and does what is described. "Partial" means the code path is traced, but sound and feel only show in the car. Ready-to-use values are in the [recipes](docs/06-recipes.md).
+How it sounds and feels depends on your car: exhaust, mileage, condition. Test it yourself, one change at a time. Starting values are in the [recipes](docs/06-recipes.md). What else makes a difference, for example a sport exhaust, is in the [tips](docs/08-tips.md).
 
-The XDF also shows the related tables you should not change (ignition, VANOS, lambda, pedal, torque, monitoring) as **[READ ONLY]**, so you can see the context. The check script refuses any file that changes them.
+The standard XDF also shows the related tables you should not change (VANOS, lambda, pedal, torque, monitoring) as **[READ ONLY]**, so you can see the context. The check script refuses any file that changes them.
+
+**Want to go further?** This is open source. The [expert XDFs](xdf/expert/) contain every known parameter (1707) with nothing locked, including ignition, VANOS, lambda, DISA and coolant for power tuning. Check those files with `ms45_check.py --expert`: the rules of this guide become warnings, but the checks that would brick or upset the ECU (monitoring checksum, signature, wrong software) still block. What is realistic for more power is in the [tips](docs/08-tips.md#more-power-what-is-realistic).
 
 ## Guide
 
@@ -35,7 +37,8 @@ The XDF also shows the related tables you should not change (ignition, VANOS, la
 5. [Checking and flashing](docs/05-check-and-flash.md)
 6. [Recipes: what to enter for which goal](docs/06-recipes.md)
 7. [How the limiter and the overrun fuel cut work](docs/07-how-it-works.md)
-8. [Parameter reference](docs/parameters.md)
+8. [Tips: exhaust, power, what works, what does not](docs/08-tips.md)
+9. [Parameter reference](docs/parameters.md)
 
 ## Quick start
 
@@ -57,6 +60,7 @@ If you see an `ERROR`, do not flash.
 |---|---|
 | [`xdf/MS45_E60_520i_TuneFile.xdf`](xdf/) | TunerPro definition for the tune file (118,784 bytes, "Read DME" without "Full Binary"). **Recommended.** |
 | [`xdf/MS45_E60_520i_FullFlash.xdf`](xdf/) | Same definition for a full 1 MB flash dump |
+| [`xdf/expert/`](xdf/expert/) | **Expert XDFs** (tune file and 1 MB): all 1707 known parameters, nothing locked. Check with `ms45_check.py --expert` |
 | [`tools/ms45_check.py`](tools/ms45_check.py) | Checks a file before flashing. Also identifies a single dump |
 | [`tools/ms45_tune.py`](tools/ms45_tune.py) | Cuts the tune file out of a 1 MB dump |
 | [`tools/ms45_diff.py`](tools/ms45_diff.py) | Shows which parameters differ between two files |

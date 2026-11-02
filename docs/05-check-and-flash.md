@@ -62,6 +62,14 @@ Result: 0 errors, 0 warnings. No blocking problem found.
 
 The script finds known problems. It cannot prove that a file is safe.
 
+### Expert mode
+
+```bash
+python3 tools/ms45_check.py --expert my_read_tune.bin my_expert_tune.bin
+```
+
+For files made with the expert XDF. These become warnings instead of errors: read-only parameters, bytes without a known parameter, values outside the safe range, rev limit above 7000. These stay errors, because the ECU itself reacts to them: wrong software, changes outside the tune area or in the identification block, anything inside the monitoring checksum area, idle above the monitor limit, a signature that crashes the flasher.
+
 ## Flash
 
 1. Charger on, ignition on, engine off, consumers off (see [setup](02-setup.md#before-every-session)).

@@ -2,10 +2,12 @@
 """Checks an MS45 image before flashing. ERROR means: do not flash.
 
 Usage:
-  ms45_check.py <original.bin> <modified.bin> [mpc.bin]   check a modified file against its original
-  ms45_check.py <file.bin> [mpc.bin]                      only identify a file and check its integrity
+  ms45_check.py [--expert] <original.bin> <modified.bin> [mpc.bin]   check a modified file against its original
+  ms45_check.py <file.bin> [mpc.bin]                                 only identify a file and check its integrity
 
 Images can be 1 MB flash dumps or tune files (118,784 bytes, "Read DME" without "Full Binary").
+--expert (for the expert XDF): read-only parameters, unknown bytes and values outside the safe
+range become warnings. ROM test, signature, area and software checks stay errors.
 Exit code: 0 = no errors, 1 = at least one error.
 """
 import sys
@@ -16,9 +18,10 @@ from ms45_diff import cell_changes, diff, report
 
 
 class Result:
-    def __init__(self):
+    def __init__(self, expert=False):
         self.err = []
         self.warn = []
+        self.expert = expert
 
     def ok(self, text):
         print("  OK      ", text)
@@ -30,6 +33,13 @@ class Result:
     def warning(self, text):
         print("  WARNING ", text)
         self.warn.append(text)
+
+    def policy(self, text):
+        """A rule of this guide, not a technical limit: an error normally, a warning with --expert."""
+        if self.expert:
+            self.warning(text + " (accepted with --expert)")
+        else:
+            self.fail(text)
 
     def summary(self):
         verdict = "DO NOT FLASH." if self.err else "No blocking problem found."
@@ -60,14 +70,14 @@ def interlocks(old, new, params, touched, r):
     if mt != h:
         r.warning("id_n_max_mt and id_n_max_h_mt differ. Up to 55 km/h h_mt applies, above that mt.")
     if max(mt + h) > 7000:
-        r.fail(f"Rev limit {max(mt + h):.0f} rpm is above 7000. The MS4X wiki warns of engine damage on the M54 above 7000 rpm.")
+        r.policy(f"Rev limit {max(mt + h):.0f} rpm is above 7000. The MS4X wiki warns of engine damage on the M54 above 7000 rpm.")
     elif "id_n_max_mt" in touched or "id_n_max_h_mt" in touched:
         r.ok(f"Rev limit at most {max(mt + h):.0f} rpm")
     if min(mt + h) < 5000:
         r.warning(f"Rev limit {min(mt + h):.0f} rpm in at least one gear. A public report mentions ECU restarts with a strongly lowered limit (MS45.1, program patch).")
     lim = phys_cells(new, params["c_n_lim_min"])[0]
     if max(mt + h) >= lim:
-        r.fail("Rev limit reaches the over-rev counter c_n_lim_min.")
+        r.policy("Rev limit reaches the over-rev counter c_n_lim_min.")
 
     mon = params["ip_n_sp_is_mon_max_mon"]
     xs = mon["x"]["values"]
@@ -145,13 +155,17 @@ def info(paths):
 
 def main():
     args = sys.argv[1:]
+    expert = "--expert" in args
+    args = [a for a in args if a != "--expert"]
     if not 1 <= len(args) <= 3 or args[0] in ("-h", "--help"):
         sys.exit(__doc__.strip())
     # Second argument with MPC size: info mode for one image plus its MPC
     if len(args) == 1 or (len(args) == 2 and Path(args[1]).is_file() and Path(args[1]).stat().st_size == MPC_SIZE):
         return info(args)
 
-    r = Result()
+    r = Result(expert)
+    if expert:
+        print("EXPERT MODE: rules of this guide are only warnings. You are on your own.\n")
     print("1. Size and origin")
     a, a_tune = load_image(args[0])
     b, b_tune = load_image(args[1])
@@ -189,12 +203,12 @@ def main():
     if a[ID_BLOCK[0]:ID_BLOCK[1]] != b[ID_BLOCK[0]:ID_BLOCK[1]]:
         r.fail("Identification block 0x40000-0x400FF changed.")
     if unknown:
-        r.fail(f"{len(unknown)} bytes changed that belong to no known parameter. Do not flash until that is clear.")
+        r.policy(f"{len(unknown)} bytes changed that belong to no known parameter. Do not flash until that is clear.")
 
     print("4. Parameters")
     for name, v in touched.items():
         if v["access"] == "read_only":
-            r.fail(f"{name} is read only.")
+            r.policy(f"{name} is read only.")
         elif v["access"] == "caution":
             r.warning(f"{name} is 'caution' (confidence {v['confidence']}, risk {v['risk']}).")
         if v["rom_test"]:
@@ -203,7 +217,7 @@ def main():
         changed = {row * v["cols"] + col for row, col, _, _ in cell_changes(a, b, v)}
         for i in sorted(changed):
             if v["safe_min"] is not None and not v["safe_min"] <= cells[i] <= v["safe_max"]:
-                r.fail(f"{name}: {fmt_phys(v, cells[i])} outside {v['safe_min']} to {v['safe_max']}.")
+                r.policy(f"{name}: {fmt_phys(v, cells[i])} outside {v['safe_min']} to {v['safe_max']}.")
                 break
     interlocks(a, b, params, touched, r)
 

@@ -9,6 +9,8 @@
 
 The wrong combination shows wrong values: the addresses are shifted by `0x40000`.
 
+**Expert XDFs** (`xdf/expert/`): the same two variants with all 1707 known parameters and nothing marked read only. Use them if you want to work on ignition, VANOS, DISA and the rest yourself. Entries inside the monitoring checksum area are marked **[ROM TEST]**: changing them breaks the checksum and the check script will always block that. Check expert files with `ms45_check.py --expert`.
+
 ## Open the file
 
 1. **Copy** your read, for example `my_tune_v1.bin`. Only ever edit the copy.
@@ -40,5 +42,5 @@ Each entry has a description (open the table, then the info/description view). I
 
 - **One idea per file.** For example the rev limit first, burbles in a second file. If a fault appears, you know where it came from.
 - Name files by version: `tune_v1_revlimit.bin`, `tune_v2_burbles.bin`.
-- Never edit **[READ ONLY]** entries. The tag is only a hint in TunerPro; the actual block is in `ms45_check.py`.
+- With the standard XDF, do not edit **[READ ONLY]** entries. The tag is only a hint in TunerPro; the actual block is in `ms45_check.py`. If you know what you are doing, use the expert XDF and `--expert` instead.
 - TunerPro does not need a checksum plugin. The flasher recalculates CRC and signature.

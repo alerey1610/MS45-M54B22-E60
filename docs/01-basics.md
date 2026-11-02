@@ -57,6 +57,5 @@ Every parameter in the XDF and in [`parameters.json`](../data/parameters.json) h
 | Label | Values | Meaning |
 |---|---|---|
 | access | `free`, `caution`, `read_only` | Whether you may change it. `read_only` is blocked by the check script |
-| confidence | `confirmed`, `partial`, `unclear` | Whether the effect is proven. `confirmed` = the original ECU code was run in an emulator |
 | status | `verified`, `plausible`, `guess` | Whether address and scaling are proven (all curated ones are `verified`) |
 | risk | `low`, `medium`, `high` | What can go wrong if the value is bad |
