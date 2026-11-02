@@ -24,3 +24,10 @@ Exit code 0 means no errors. Do not flash on an error. The check does not guaran
 ## Status
 
 The guide is being written topic by topic. Factory and modified images will be added later.
+
+## Useful tools and documentation
+
+[MS45 definitions](https://github.com/pazi88/Siemens_ms45_RR-definitions/tree/master)(docs)
+[MS45 tuning documentation](https://www.ms4x.net/index.php?title=Siemens_MS45)(docs)
+[MS45 Flasher](https://github.com/terraphantm/MS45-Flasher)(for flashing and reading)
+[TunerPro](https://www.tunerpro.net)(for tuning your file)
