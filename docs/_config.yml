@@ -1,5 +1,3 @@
-title: MS45 Tuning, BMW E60 520i
-description: Documentation for an MS45 engine control unit tuning project
+title: MS45 DIY Tuning, BMW E60 520i
+description: Step-by-step guide to tuning the Siemens MS45.0 ECU (M54B22) with TunerPro
 theme: minima
-exclude:
-  - status/

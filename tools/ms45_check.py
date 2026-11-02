@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""
-Checks a modified file before flashing. Red means: do not flash.
+"""Checks an MS45 image before flashing. ERROR means: do not flash.
+
 Usage:
-ms45_check.py <Original> <Modified> [MPC.bin]
-ms45_check.py <Modified> (Original = archive/easy-route/Start_Original_Tune.bin)
-Both files can be 1-MB dumps or tune files (118,784 bytes).
+  ms45_check.py <original.bin> <modified.bin> [mpc.bin]   check a modified file against its original
+  ms45_check.py <file.bin> [mpc.bin]                      only identify a file and check its integrity
+
+Images can be 1 MB flash dumps or tune files (118,784 bytes, "Read DME" without "Full Binary").
 Exit code: 0 = no errors, 1 = at least one error.
 """
 import sys
@@ -23,35 +24,53 @@ class Result:
         print("  OK      ", text)
 
     def fail(self, text):
-        print("  FEHLER  ", text)
+        print("  ERROR   ", text)
         self.err.append(text)
 
     def warning(self, text):
-        print("  WARNUNG ", text)
+        print("  WARNING ", text)
         self.warn.append(text)
 
+    def summary(self):
+        verdict = "DO NOT FLASH." if self.err else "No blocking problem found."
+        print(f"\nResult: {len(self.err)} errors, {len(self.warn)} warnings. {verdict}")
+        return 1 if self.err else 0
 
-def sum_table(params, name, buf):
-    return phys_cells(buf, params[name])
+
+def check_software(r, buf, label):
+    sw = software_id(buf)
+    if sw == SOFTWARE_ID:
+        r.ok(f"{label}: software {sw}, dataset {text(buf, DATASET_ADDR, 8)}")
+        return True
+    r.fail(f"{label}: software '{sw}', expected {SOFTWARE_ID}. The XDF and this check only fit {SOFTWARE_ID}.")
+    return False
 
 
-def interlocks(new, params, touched, r):
-    mt = sum_table(params, "id_n_max_mt", new)
-    h = sum_table(params, "id_n_max_h_mt", new)
+def check_mpc(r, flash, mpc):
+    fs, ms = text(flash, 0x60310, 10), text(mpc, 0x100, 10)
+    if fs.isdigit() and ms.isdigit() and int(fs) - int(ms) == 500:
+        r.ok(f"Program numbers match ({fs} - {ms} = 500)")
+    else:
+        r.fail(f"Program numbers do not match ({fs} / {ms}). Wrong MPC file?")
+
+
+def interlocks(old, new, params, touched, r):
+    mt = phys_cells(new, params["id_n_max_mt"])
+    h = phys_cells(new, params["id_n_max_h_mt"])
     if mt != h:
-        r.warning("id_n_max_mt und id_n_max_h_mt sind verschieden. Bis 55 km/h gilt h_mt, danach mt.")
+        r.warning("id_n_max_mt and id_n_max_h_mt differ. Up to 55 km/h h_mt applies, above that mt.")
     if max(mt + h) > 7000:
-        r.fail(f"Drehzahlgrenze {max(mt + h):.0f}/min ueber 7000. Das Wiki warnt ab 7000/min vor Motorschaden am M54.")
+        r.fail(f"Rev limit {max(mt + h):.0f} rpm is above 7000. The MS4X wiki warns of engine damage on the M54 above 7000 rpm.")
     elif "id_n_max_mt" in touched or "id_n_max_h_mt" in touched:
-        r.ok(f"Drehzahlgrenze hoechstens {max(mt + h):.0f}/min")
+        r.ok(f"Rev limit at most {max(mt + h):.0f} rpm")
     if min(mt + h) < 5000:
-        r.warning(f"Drehzahlgrenze {min(mt + h):.0f}/min in mindestens einem Gang. Ein oeffentlicher Bericht nennt Neustarts der DME bei stark abgesenkter Grenze (MS45.1, Programm-Patch).")
-    lim = sum_table(params, "c_n_lim_min", new)[0]
+        r.warning(f"Rev limit {min(mt + h):.0f} rpm in at least one gear. A public report mentions ECU restarts with a strongly lowered limit (MS45.1, program patch).")
+    lim = phys_cells(new, params["c_n_lim_min"])[0]
     if max(mt + h) >= lim:
-        r.fail("Drehzahlgrenze erreicht den Ueberdrehzaehler c_n_lim_min.")
+        r.fail("Rev limit reaches the over-rev counter c_n_lim_min.")
 
     mon = params["ip_n_sp_is_mon_max_mon"]
-    xs = mon["x"]["vals"]
+    xs = mon["x"]["values"]
     ys = phys_cells(new, mon)
 
     def lim_at(t):
@@ -64,17 +83,17 @@ def interlocks(new, params, touched, r):
 
     for name in ("ip_n_sp_is", "ip_acin_n_sp_is"):
         v = params[name]
-        for t, val in zip(v["x"]["vals"], phys_cells(new, v)):
+        for t, val in zip(v["x"]["values"], phys_cells(new, v)):
             if val >= lim_at(t):
-                r.fail(f"{name}: {val:.0f}/min bei {t:.0f} C liegt nicht unter der Ueberwachung {lim_at(t):.0f}/min.")
+                r.fail(f"{name}: {val:.0f} rpm at {t:.0f} C is not below the monitor limit {lim_at(t):.0f} rpm.")
 
-    fcut = sum_table(params, "c_add_n_max_fcut", new)[0]
+    fcut = phys_cells(new, params["c_add_n_max_fcut"])[0]
     if fcut < 10:
-        r.warning(f"c_add_n_max_fcut {fcut:.0f}/min: unter 10 bringt laut Modell kaum mehr und ist nicht untersucht.")
+        r.warning(f"c_add_n_max_fcut {fcut:.0f} rpm: below 10 the model shows little extra effect, and it is untested.")
 
     for name in ("ip_n_min_puc__tco__gr_mt", "ip_n_accout_min_puc__tco__gr_mt"):
         if name in touched and max(phys_cells(new, params[name])) >= 6000:
-            r.warning(f"{name}: Schwelle sehr hoch. Das bedeutet Dauer-Einspritzung im ganzen Schub, keine kurzen Burbles.")
+            r.warning(f"{name}: threshold very high. That means continuous injection on the whole overrun, not short burbles.")
 
     for name in ("ip_t_min_pu__n__tco", "ip_t_min_pu_rng_l__n__tco", "c_t_min_pu_vs"):
         if name not in touched:
@@ -82,110 +101,146 @@ def interlocks(new, params, touched, r):
         v = params[name]
         cells = phys_cells(new, v)
         if max(cells) > 1.2:
-            r.warning(f"{name}: {max(cells):.2f} s. Ueber 1,2 s laeuft die Haltezeit der Momentenueberwachung ab (c_t_tqi_mon). Danach Fehlerspeicher besonders pruefen.")
+            r.warning(f"{name}: {max(cells):.2f} s. Above 1.2 s the torque monitor hold time (c_t_tqi_mon) runs out. Check fault memory carefully afterwards.")
         if v["rows"] == 1:
             continue
-        orig = v["phys"]
+        orig = phys_cells(old, v)
         if any(abs(cells[row * v["cols"] + col] - orig[row * v["cols"] + col]) > 1e-6 for row in range(v["rows"]) for col in range(4)):
-            r.warning(f"{name}: Auch kalte Spalten geaendert. Empfohlen sind nur 60 und 90 C (zwischen 30 und 60 C wird interpoliert).")
+            r.warning(f"{name}: cold columns changed too. Recommended: only 60 and 90 C (30-60 C is interpolated).")
+
+
+def integrity(r, buf, is_tune):
+    hi, lo = rom_test_sum(buf)
+    if (hi, lo) == (u32(buf, ROM_TEST_HI), u32(buf, ROM_TEST_LO)):
+        r.ok(f"ROM test sum {hi:08X}{lo:08X} is correct")
+    else:
+        r.fail("ROM test sum is wrong. The ECU would log a fault or restart.")
+    stored, calc = u32(buf, CRC_ADDR), param_crc(buf)
+    if stored == calc:
+        r.ok(f"Data CRC {stored:08X} is correct")
+    else:
+        print(f"  INFO     Data CRC stored {stored:08X}, calculated {calc:08X} (the flasher fixes this when flashing)")
+
+
+def info(paths):
+    """Mode with one image: identify it and check integrity, e.g. right after reading the ECU."""
+    r = Result()
+    buf, is_tune = load_image(paths[0])
+    print(f"File: {paths[0]} ({'tune file' if is_tune else '1 MB image'})")
+    check_software(r, buf, "File")
+    tune_sha = sha256(buf[TUNE_START:TUNE_END])
+    if tune_sha == STOCK_TUNE_SHA256:
+        r.ok("Tune area is the known stock tune for this software")
+    else:
+        print("  INFO     Tune area differs from the known stock tune (already modified, or another dataset)")
+    print("  INFO     SHA-256 0x40000-0x5CFFF:", tune_sha)
+    integrity(r, buf, is_tune)
+    if len(paths) > 1:
+        if is_tune:
+            r.warning("Tune file has no program part, MPC check skipped.")
+        else:
+            check_mpc(r, buf, load(paths[1], MPC_SIZE))
+    return r.summary()
 
 
 def main():
-    r = Result()
-    print("1. Groesse und Herkunft")
     args = sys.argv[1:]
-    if len(args) == 1:
-        args.insert(0, str(Path(__file__).resolve().parent.parent / "archive", "easy-route" / "Start_Original_Tune.bin"))
+    if not 1 <= len(args) <= 3 or args[0] in ("-h", "--help"):
+        sys.exit(__doc__.strip())
+    # Second argument with MPC size: info mode for one image plus its MPC
+    if len(args) == 1 or (len(args) == 2 and Path(args[1]).is_file() and Path(args[1]).stat().st_size == MPC_SIZE):
+        return info(args)
+
+    r = Result()
+    print("1. Size and origin")
     a, a_tune = load_image(args[0])
     b, b_tune = load_image(args[1])
     mpc = load(args[2], MPC_SIZE) if len(args) > 2 else None
-    # Eine Tune-Datei enthaelt nur 0x40000-0x5CFFF, der Rest kommt vom anderen Abbild
+    # A tune file only holds 0x40000-0x5CFFF, the rest is taken from the other image
     if b_tune:
         b = a[:TUNE_START] + b[TUNE_START:TUNE_END] + a[TUNE_END:]
     if a_tune:
         a = b[:TUNE_START] + a[TUNE_START:TUNE_END] + b[TUNE_END:]
-    if (sha256(a[TUNE_START:TUNE_END]) != TUNE_SHA256) if a_tune else (sha256(a) != FLASH_SHA256):
-        r.fail("Das Referenz-Original hat nicht den bekannten SHA-256. Falsche Datei?")
+    ok_a = check_software(r, a, "Original")
+    ok_b = check_software(r, b, "Modified")
+    if not (ok_a and ok_b):
+        print("\nWrong software: addresses differ, a check would be meaningless.")
+        return r.summary()
+    if sha256(a[TUNE_START:TUNE_END]) == STOCK_TUNE_SHA256:
+        r.ok("Original is the known stock tune")
     else:
-        r.ok("Original ist das bekannte Backup" + (" (Tune-Teil)" if a_tune else ""))
+        r.warning("Original is not the known stock tune. Fine if it is your own earlier tune, otherwise compare against your untouched backup.")
     if b_tune:
-        r.ok("Geaenderte Datei ist eine Tune-Datei (118.784 Byte)")
+        r.ok("Modified file is a tune file (118,784 bytes)")
     if a == b:
-        r.ok("Datei ist identisch mit dem Original (Probelauf)")
+        r.ok("File is identical to the original (dry run)")
 
-    print("2. Unterschiede")
+    print("2. Differences")
     params = load_params()
     print("\n".join("     " + line for line in report(a, b, params)))
     touched, head, unknown = diff(a, b, params)
 
-    print("3. Bereich")
+    print("3. Area")
     outside = [off for off in range(len(a)) if a[off] != b[off] and not TUNE_START <= off < TUNE_END]
     if outside:
-        r.fail(f"{len(outside)} Byte ausserhalb 0x40000-0x5CFFF geaendert, z. B. 0x{outside[0]:05X}. Flash Tune schreibt das nicht.")
+        r.fail(f"{len(outside)} bytes changed outside 0x40000-0x5CFFF, e.g. 0x{outside[0]:05X}. Flash Tune does not write them.")
     else:
-        r.ok("Aenderungen nur in 0x40000-0x5CFFF")
-    if a[0x40000:0x40100] != b[0x40000:0x40100]:
-        r.fail("Kennungsblock 0x40000-0x400FF geaendert.")
+        r.ok("Changes only in 0x40000-0x5CFFF")
+    if a[ID_BLOCK[0]:ID_BLOCK[1]] != b[ID_BLOCK[0]:ID_BLOCK[1]]:
+        r.fail("Identification block 0x40000-0x400FF changed.")
     if unknown:
-        r.fail(f"{len(unknown)} Byte ohne Parameternamen geaendert. Nicht flashen, bis das geklaert ist.")
+        r.fail(f"{len(unknown)} bytes changed that belong to no known parameter. Do not flash until that is clear.")
 
-    print("4. Parameter")
+    print("4. Parameters")
     for name, v in touched.items():
-        if v["aenderung"] == "ansehen":
-            r.fail(f"{name} ist 'nur ansehen'.")
-        elif v["aenderung"] == "vorsicht":
-            r.warning(f"{name} ist 'vorsicht' (Wirkung {v['wirkung']}, Risiko {v['risiko']}).")
+        if v["access"] == "read_only":
+            r.fail(f"{name} is read only.")
+        elif v["access"] == "caution":
+            r.warning(f"{name} is 'caution' (confidence {v['confidence']}, risk {v['risk']}).")
         if v["rom_test"]:
-            r.fail(f"{name} liegt im ROM-Test der Ueberwachung.")
+            r.fail(f"{name} is inside the monitoring ROM test.")
         cells = phys_cells(b, v)
         changed = {row * v["cols"] + col for row, col, _, _ in cell_changes(a, b, v)}
-        for i in changed:
-            if v["lo"] is not None and not v["lo"] <= cells[i] <= v["hi"]:
-                r.fail(f"{name}: {fmt_phys(v, cells[i])} ausserhalb {v['lo']} bis {v['hi']}.")
+        for i in sorted(changed):
+            if v["safe_min"] is not None and not v["safe_min"] <= cells[i] <= v["safe_max"]:
+                r.fail(f"{name}: {fmt_phys(v, cells[i])} outside {v['safe_min']} to {v['safe_max']}.")
                 break
-    interlocks(b, params, touched, r)
+    interlocks(a, b, params, touched, r)
 
-    print("5. Ueberwachungs-Summe (der Flasher korrigiert sie nicht)")
+    print("5. Monitoring checksum (the flasher does NOT fix it)")
     if b[ROM_TEST_START:ROM_TEST_END] != a[ROM_TEST_START:ROM_TEST_END]:
-        r.fail("Bereich 0x40240-0x407C7 geaendert.")
+        r.fail("Area 0x40240-0x407C7 changed.")
     hi, lo = rom_test_sum(b)
     if (hi, lo) != (u32(b, ROM_TEST_HI), u32(b, ROM_TEST_LO)):
-        r.fail("ROM-Test-Summe stimmt nicht.")
+        r.fail("ROM test sum does not match.")
     else:
-        r.ok(f"ROM-Test-Summe {hi:08X}{lo:08X} stimmt")
+        r.ok(f"ROM test sum {hi:08X}{lo:08X} matches")
 
-    print("6. CRC und Signatur, wie der Flasher sie schreibt")
+    print("6. CRC and signature as the flasher writes them")
     final, crc, val = apply_flasher(b)
-    r.ok(f"Neue Daten-CRC {crc:08X}")
+    r.ok(f"New data CRC {crc:08X}")
     if flasher_crash_risk(val):
-        r.fail("Signatur beginnt mit Null-Bytes. Der Flasher wuerde nach dem Loeschen abstuerzen. Einen Wert minimal aendern und neu pruefen.")
+        r.fail("Signature starts with zero bytes. The flasher would crash after erasing. Change one value minimally and check again.")
     else:
-        r.ok("Signatur laesst den Flasher nicht abstuerzen")
+        r.ok("Signature does not crash the flasher")
 
-    print("7. Flash und MPC")
+    print("7. Flash and MPC")
     if a_tune or b_tune:
-        r.ok("Tune-Datei: Programmteil nicht enthalten. Der Flasher vergleicht die Kennung beim Laden selbst.")
+        r.ok("Tune file: no program part. The flasher compares the program ID itself when loading.")
     elif mpc is None:
-        r.warning("Keine MPC-Datei angegeben, Pruefung uebersprungen.")
+        r.warning("No MPC file given, check skipped.")
     else:
-        if sha256(mpc) != MPC_SHA256:
-            r.warning("MPC ist nicht das bekannte Original.")
-        fs, ms = b[0x60310:0x6031A].decode(), mpc[0x100:0x10A].decode()
-        if int(fs) - int(ms) == 500:
-            r.ok(f"Programmnummern passen ({fs} - {ms} = 500)")
-        else:
-            r.fail(f"Programmnummern passen nicht ({fs} - {ms}).")
+        check_mpc(r, b, mpc)
 
-    print("8. Zum Vergleich nach dem Zuruecklesen")
-    print("     Dateigroesse Tune 0x1D000 Byte (Flasher: Read DME ohne Haken)")
+    print("8. For comparison after reading back")
+    print("     Tune file size 0x1D000 bytes (flasher: Read DME without 'Full Binary')")
     if b_tune:
-        print("     Diese Datei direkt mit Load File und Flash Tune flashen, Haken Full Binary aus.")
+        print("     Flash this file directly: Load File, Flash Tune, 'Full Binary' unticked.")
     else:
-        print("     Tune-Datei zum Flashen ohne Haken: python ms45_tune.py Datei.bin Datei_tune.bin")
+        print("     Make a tune file first: python3 tools/ms45_tune.py file.bin file_tune.bin")
     print("     SHA-256 0x40000-0x5CFFF:", sha256(final[TUNE_START:TUNE_END]))
 
-    print(f"\nErgebnis: {len(r.err)} Fehler, {len(r.warn)} Warnungen.", "NICHT FLASHEN." if r.err else "Keine Sperre gefunden.")
-    return 1 if r.err else 0
+    return r.summary()
 
 
 if __name__ == "__main__":

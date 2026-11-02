@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Gemeinsame Basis der MS45-Werkzeuge: Laden, CRC, Signatur, Parametertabelle.
+"""Shared code for the MS45 tools: loading images, CRC, signature, parameter table.
 
-CRC- und Signatur-Logik sind aus terraphantm/MS45-Flasher (Checksums_Signatures.cs, GPL-3.0)
-uebertragen und am Original-Backup bestaetigt: Der Probelauf ergibt byte-identische Daten.
+CRC and signature logic are ported from terraphantm/MS45-Flasher (Checksums_Signatures.cs, GPL-3.0)
+and verified against a stock backup: a dry run produces byte-identical data.
 """
 import hashlib
 import json
@@ -13,21 +13,25 @@ from pathlib import Path
 FLASH_SIZE = 0x100000
 MPC_SIZE = 0x70000
 TUNE_START = 0x40000
-TUNE_END = 0x5D000  # exklusiv: "Flash Tune" schreibt 0x40000-0x5CFFF
-TUNE_SIZE = TUNE_END - TUNE_START  # so gross speichert "Read DME" ohne Haken
+TUNE_END = 0x5D000  # exclusive: "Flash Tune" writes 0x40000-0x5CFFF
+TUNE_SIZE = TUNE_END - TUNE_START  # size "Read DME" saves without "Full Binary"
 CRC_ADDR = 0x40100
 SIG_ADDR = 0x40174
 SIG_LEN = 64
-ROM_TEST_START = 0x40240  # Ueberwachung: 64-Bit-Summe, die der Flasher nicht korrigiert
+ROM_TEST_START = 0x40240  # monitoring: 64-bit sum that the flasher does NOT correct
 ROM_TEST_END = 0x407C8
 ROM_TEST_HI = 0x457AC
 ROM_TEST_LO = 0x457B0
+ID_BLOCK = (0x40000, 0x40100)
 
-FLASH_SHA256 = "7574f676c7490ad928c0b8ca5232dade9e12995ea5545a8f1d112ac801d8354e"
-MPC_SHA256 = "6469caf1e3e49f98daea4d17f9d7db515d8d246a489d26e878e7c85a1d5a4f71"
-TUNE_SHA256 = "85e76b3d3fe2c560b7f64dee385fde18aa8534e5656303a0376ccd538e90a0a1"  # 0x40000-0x5CFFF des Originals
+# The XDF and parameters.json are only valid for this software. Other software = other addresses.
+SOFTWARE_ID = "0044560BN00S0QA0G"
+SOFTWARE_ADDR = 0x40010
+DATASET_ADDR = 0x40043
+# 0x40000-0x5CFFF of the stock tune for this software (identical to 520ir.bin in pazi88/Siemens_ms45_RR-definitions)
+STOCK_TUNE_SHA256 = "85e76b3d3fe2c560b7f64dee385fde18aa8534e5656303a0376ccd538e90a0a1"
 
-# Oeffentlich im Quelltext des Flashers (SignMS45Parameters).
+# Public in the flasher source code (SignMS45Parameters).
 RSA_N = 8470472580328006956677424405159809178175955696534718361218518906571634405286747173565502454089691240931470915432212928785673566143706092135925769557255439
 RSA_D = 7260405068852577391437792347279836438436533454172615738187301919918543775959908116508429649500721130520546364846625732843778800986047617824899475327781303
 
@@ -55,25 +59,36 @@ def sha256(data):
     return hashlib.sha256(bytes(data)).hexdigest()
 
 
+def text(buf, start, length):
+    return bytes(buf[start:start + length]).decode("ascii", errors="replace")
+
+
+def software_id(buf):
+    return text(buf, SOFTWARE_ADDR, len(SOFTWARE_ID))
+
+
 def load(path, size=None):
-    data = Path(path).read_bytes()
+    try:
+        data = Path(path).read_bytes()
+    except OSError as e:
+        sys.exit(f"ERROR: {path}: {e.strerror}")
     if size is not None and len(data) != size:
-        sys.exit(f"FEHLER: {path}: {len(data)} Byte, erwartet {size}")
+        sys.exit(f"ERROR: {path}: {len(data)} bytes, expected {size}")
     return data
 
 
 def load_image(path):
-    """1-MB-Abbild oder Tune-Datei. Gibt (1-MB-Puffer, ist_tune) zurueck, die Tune-Datei liegt dann ab 0x40000."""
+    """1 MB image or tune file. Returns (1 MB buffer, is_tune). A tune file is placed at 0x40000."""
     data = load(path)
     if len(data) == FLASH_SIZE:
         return data, False
     if len(data) == TUNE_SIZE:
         return b"\xff" * TUNE_START + data + b"\xff" * (FLASH_SIZE - TUNE_END), True
-    sys.exit(f"FEHLER: {path}: {len(data)} Byte. Erwartet {FLASH_SIZE} (1-MB-Abbild) oder {TUNE_SIZE} (Tune-Datei).")
+    sys.exit(f"ERROR: {path}: {len(data)} bytes. Expected {FLASH_SIZE} (1 MB image) or {TUNE_SIZE} (tune file).")
 
 
 def param_crc(flash):
-    """Wie GetChecksum: Segmente aus 0x40104, Startwert aus 0x40110."""
+    """Like GetChecksum: segments from 0x40104, start value from 0x40110."""
     crc = u32(flash, 0x40110)
     for i in range(u32(flash, 0x40104)):
         start = u32(flash, 0x40108 + 8 * i) - 0xFFE00000
@@ -105,12 +120,12 @@ def signature_bytes(value):
 
 
 def flasher_crash_risk(value):
-    """.NET BigInteger.ToByteArray liefert bit_length//8 + 1 Byte. Der Flasher greift bis Index 63 zu."""
+    """.NET BigInteger.ToByteArray returns bit_length//8 + 1 bytes. The flasher reads up to index 63."""
     return value.bit_length() // 8 + 1 < 64
 
 
 def apply_flasher(flash):
-    """Rechnet CRC und Signatur in der Reihenfolge des Flashers neu."""
+    """Recalculates CRC and signature in the same order as the flasher."""
     out = bytearray(flash)
     crc = param_crc(out)
     struct.pack_into(">I", out, CRC_ADDR, crc)
@@ -120,7 +135,7 @@ def apply_flasher(flash):
 
 
 def rom_test_sum(flash):
-    """Ueberwachungs-Summe wie im Programm bei 0xFFF785A8."""
+    """Monitoring sum as computed by the program at 0xFFF785A8."""
     hi, lo = 0x01234567, 0x89ABCDEF
     for off in range(ROM_TEST_START, ROM_TEST_END, 4):
         lo += u32(flash, off)
@@ -137,8 +152,8 @@ def load_params():
 
 def build_addr_map(params):
     m = {}
-    # Katalog-Eintraege zuletzt, damit sie bei Ueberschneidungen gewinnen
-    for v in sorted(params.values(), key=lambda r: r["kuratiert"]):
+    # Curated entries last so they win where ranges overlap
+    for v in sorted(params.values(), key=lambda r: r["curated"]):
         size = v["rows"] * v["cols"] * v["bits"] // 8
         for a in range(v["addr"], v["addr"] + size):
             m[a] = v
@@ -152,25 +167,9 @@ def read_cell(buf, v, i):
 
 
 def phys_cells(buf, v):
-    return [read_cell(buf, v, i) * v["f"] + v["o"] for i in range(v["rows"] * v["cols"])]
+    return [read_cell(buf, v, i) * v["factor"] + v["offset"] for i in range(v["rows"] * v["cols"])]
 
 
 def fmt_phys(v, val):
-    return f"{val:.3f}".rstrip("0").rstrip(".") + (" " + v["unit"].strip() if v["unit"].strip() else "")
-
-
-WORDS = [("unterstuetz", "unterstütz"), ("Lautstaerke", "Lautstärke"), ("gefuehl", "gefühl"), ("gelaende", "gelände"), ("Pruef", "Prüf"), ("pruef", "prüf"), ("Waehr", "Währ"), ("erfuell", "erfüll"), ("geklaert", "geklärt"), ("laedt", "lädt"), ("laenger", "länger"), ("staendig", "ständig"), ("waere", "wäre"), ("zaehl", "zähl"), ("Zuend", "Zünd"), ("zuend", "zünd"), ("Kuehl", "Kühl"), ("kuehl", "kühl"), ("Luefter", "Lüfter"), ("Ueber", "Über"), ("ueber", "über"),
-         ("fuer", "für"), ("Fuer", "Für"), ("Rueck", "Rück"), ("rueck", "rück"), ("aender", "änder"), ("Aender", "Änder"), ("haeng", "häng"),
-         ("faell", "fäll"), ("faehr", "fähr"), ("spaet", "spät"), ("Spaet", "Spät"), ("bestaetig", "bestätig"), ("geprueft", "geprüft"),
-         ("zusaetz", "zusätz"), ("Zusaetz", "Zusätz"), ("naeher", "näher"), ("Annaeh", "Annäh"), ("waehr", "währ"), ("laeuft", "läuft"),
-         ("Stuetz", "Stütz"), ("groess", "größ"), ("Groess", "Größ"), ("heiss", "heiß"), ("ausserhalb", "außerhalb"), ("laesst", "lässt"),
-         ("moeglich", "möglich"), ("Oel", "Öl"), ("frueh", "früh"), ("schuetz", "schütz"), ("Stueck", "Stück"), ("erzoeger", "erzöger"),
-         ("haert", "härt"), ("Haert", "Härt"), ("rhoeh", "rhöh"), ("hoeher", "höher"), ("fuehr", "führ"), ("Fuehr", "Führ"), ("ueberdeck", "überdeck"),
-         ("Daempfer", "Dämpfer"), ("Traeg", "Träg"), ("gehoert", "gehört"), ("Gehoert", "Gehört"), ("ausloes", "auslös"), ("Saugrohr-Umschaltung", "Saugrohr-Umschaltung"),
-         ("Gaenge", "Gänge"), ("abgebaut", "abgebaut"), ("Bestaet", "Bestät"), ("Dauer-Einspritzung", "Dauer-Einspritzung"), ("muessen", "müssen"), ("Muster", "Muster")]
-
-
-def de(s):
-    for a, b in WORDS:
-        s = s.replace(a, b)
-    return s
+    unit = v["unit"] if v["unit"] not in ("", "-") else ""
+    return f"{val:.3f}".rstrip("0").rstrip(".") + (" " + unit if unit else "")
