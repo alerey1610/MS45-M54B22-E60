@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Prueft eine geaenderte Datei vor dem Flashen. Rot heisst: nicht flashen.
-
-Aufruf: ms45_check.py <Original> <Geaendert> [MPC.bin]
-        ms45_check.py <Geaendert>     (Original = archive/easy-route/Start_Original_Tune.bin)
-Beide Dateien duerfen 1-MB-Abbilder oder Tune-Dateien (118.784 Byte) sein.
-Ausgang: 0 = keine Fehler, 1 = mindestens ein Fehler.
+"""
+Checks a modified file before flashing. Red means: do not flash.
+Usage:
+ms45_check.py <Original> <Modified> [MPC.bin]
+ms45_check.py <Modified> (Original = archive/easy-route/Start_Original_Tune.bin)
+Both files can be 1-MB dumps or tune files (118,784 bytes).
+Exit code: 0 = no errors, 1 = at least one error.
 """
 import sys
 from pathlib import Path
